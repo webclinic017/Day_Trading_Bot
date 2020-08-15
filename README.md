@@ -6,9 +6,9 @@ Currently supported indicators:
 2) Doji candle 
 
 Soon to be supported:
-1)RSI
-2)3 bar play
-4)VWAP
+1) RSI
+2) 3 bar play
+4) VWAP
 
 Coming soon:
 React interface to visualize candle stick chart data and to manually place stock orders.
