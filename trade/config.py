@@ -1,0 +1,8 @@
+API_KEY = 'PKRDSR58L2TNLR5RBC5T'
+SECRET_KEY = 'AOoLaXKcfZm62WP389takLessk7sHXQKA3z7H0Ap'
+HEADERS = {
+    'APCA-API-KEY-ID': API_KEY,
+    'APCA-API-SECRET-KEY': SECRET_KEY
+}
+
+BARS_URL = 'https://data.alpaca.markets/v1/bars'
