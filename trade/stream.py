@@ -1,10 +1,20 @@
   
 import config
 import websocket, json
+import alpaca_trade_api as tradeapi
+
+api = tradeapi.REST(
+    base_url = config.PAPER_URL,
+    key_id = config.API_KEY,
+    secret_key=config.SECRET_KEY
+)
 
 minute_candlesticks = []
 min_counter = 1
 stopLoss = None
+state = 'buy'
+ticker = 'TSLA'
+position = 0
 
 def on_open(ws):
     print("opened")
@@ -15,7 +25,7 @@ def on_open(ws):
 
     ws.send(json.dumps(auth_data))
 
-    listen_message = {"action": "listen", "data": {"streams": ["AM.TSLA"]}}
+    listen_message = {"action": "listen", "data": {"streams": ["AM."+ticker]}}
 
     ws.send(json.dumps(listen_message))
 
@@ -46,12 +56,16 @@ def on_message(ws, message,min_counter):
         "close": current_minute_bar['close'],
         "change": change
     })
+    
 
     print("==CandleSticks==")
     for candlestick in minute_candlesticks:
             print(candlestick)
     
-    scan_ms()
+    if state == 'buy':
+        scan_ms()
+    elif state == 'sell':
+        price_eval()
 
     min_counter += 1
 
@@ -61,7 +75,7 @@ def scan_ms():
     bar_3 = False
     gap_1 = False
     gap_2 = False
-    global stopLoss
+    global stopLoss, state, position
 
     if len(minute_candlesticks) >= 30:
         if minute_candlesticks[-3]['change'] < 0 & minute_candlesticks[-3]['change'] >= .40:  #bar -3 evaluation
@@ -89,15 +103,35 @@ def scan_ms():
 
         if bar_3 & gap_2 & bar_2 & gap_1 & bar_1:
             print("Morning star found!!!")
-            placeOrder(minute_candlesticks[-1]['close'])
+            buy(minute_candlesticks[-1]['close'])
+            position = minute_candlesticks[-1]['close']
+            state = 'sell'
             stopLoss = minute_candlesticks[-2]['low']
             print("Order placed at " + minute_candlesticks[-1]['close'] + ", taking profit at " + minute_candlesticks[-1]['close']*1.01 + " and stop loss set at " + stopLoss)
 
+def price_eval():
+    global position, state
+    if minute_candlesticks[-1]['close'] >= 1.015*position:
+        sell()
+    state = 'buy'
 
-def placeOrder(price):
-    #TODO place order using API
-    pass
-
+def buy(price):
+    api.submit_order(
+    symbol=ticker,
+    qty=1,
+    side='buy',
+    type='market',
+    time_in_force='gtc'
+    )
+    
+def sell():
+    api.submit_order(
+    symbol=ticker,
+    qty=1,
+    side='sell',
+    type='market',
+    time_in_force='gtc'
+    )
 
 socket = "wss://data.alpaca.markets/stream"
 
